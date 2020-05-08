@@ -26,7 +26,6 @@ def update():
             # fresh env
             env.render()
 
-
             # RL choose action based on observation
             action = RL.choose_action(str(observation))
 
