@@ -81,11 +81,15 @@ class DQN:
 
     def __init__(self,
                  n_action: int,
+                 net: keras.models.Model = None,
                  memory_size: int = 500,
                  batch_size: int = 32,
                  reward_decay: float = 0.9,
                  e_greedy: float = 0.9,
                  replace_target_iter: int = 300):
+        """
+        :param net: A keras.Model that takes a single argument of n_action.
+        """
         self.n_action = n_action
         self.memory_size = memory_size
         self.batch_size = batch_size
@@ -93,9 +97,13 @@ class DQN:
         self.e_greedy = e_greedy
         self.replace_target_iter = replace_target_iter
 
-        self.eval_net = Net(n_action=n_action)
-        self.target_net = Net(n_action=n_action)
+        net = net or Net
+        self.eval_net = net(n_action=n_action)
+        self.target_net = net(n_action=n_action)
         self.memory = Memory(memory_size=memory_size)
+
+        # target_net is not updated
+        self.target_net.trainable = False
 
         self.optimizer = tf.optimizers.RMSprop(learning_rate=1e-2)
         self.loss_fn = tf.losses.MeanSquaredError()
@@ -130,7 +138,7 @@ class DQN:
             q_target[batch_index, action_index] = batch_sample['reward'] + np.max(q_next, axis=1) * self.reward_decay
 
             loss = self.loss_fn(q_target, q_current)
-            print(f'Step: {self.learn_step_count}: {loss}')
+            # print(f'Step: {self.learn_step_count}: {loss}')
 
         t_vars = self.eval_net.trainable_variables
         gradients = tape.gradient(loss, t_vars)
